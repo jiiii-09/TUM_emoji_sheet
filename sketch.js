@@ -229,6 +229,9 @@ function setup() {
   preloadSVGs();
   startRecognition();
   textAlign(CENTER, CENTER);
+
+   // ⭐ 여기에 추가: 시트 체크를 여기서 시작합니다.
+  setInterval(checkSheetUpdate, 1000);
 }
 
 
@@ -527,7 +530,4 @@ function checkSheetUpdate() {
     })
     .catch(err => console.log("시트 읽기 실패:", err));
 }
-
-// 4. 1초(1000ms)마다 시트를 자동으로 체크합니다.
-setInterval(checkSheetUpdate, 1000);
 
