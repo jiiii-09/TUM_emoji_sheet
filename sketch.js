@@ -497,3 +497,37 @@ function windowResized() {
   resizeCanvas(size.w, size.h);
   preloadSVGs(); // 캔버스 비율 바뀌면 SVG도 재스케일 필요
 }
+
+
+// 1. 시트 ID 설정 (주소창의 d/ 와 /edit 사이의 문자열입니다)
+const SHEET_ID = "1-aIVAkW0KQKuP3ypGbKdCgQkc_FG6KaHMkZgOAaqvN8";
+
+// 2. 데이터를 가져올 경로 (E1 셀을 가져오도록 설정됨)
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&range=E1`;
+
+let lastDetectedFromSheet = ""; // 중복 실행 방지용 변수
+
+// 3. 시트 데이터를 읽어오는 함수
+function checkSheetUpdate() {
+  fetch(SHEET_URL)
+    .then(res => res.text())
+    .then(text => {
+      // Google 시트 특유의 JSON 형식을 파싱합니다.
+      const json = JSON.parse(text.substring(47, text.length - 2));
+      const currentWord = json.table.rows[0].c[0].v; // E1 셀의 값
+
+      // 새로운 단어가 들어왔을 때만 실행
+      if (currentWord && currentWord !== lastDetectedFromSheet) {
+        lastDetectedFromSheet = currentWord;
+        console.log("시트 데이터 수신:", currentWord);
+        
+        // 사용자가 이미 만들어둔 단어 감지 함수를 호출합니다.
+        detectLiveKeyword(currentWord); 
+      }
+    })
+    .catch(err => console.log("시트 읽기 실패:", err));
+}
+
+// 4. 1초(1000ms)마다 시트를 자동으로 체크합니다.
+setInterval(checkSheetUpdate, 1000);
+
