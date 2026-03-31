@@ -317,37 +317,30 @@ function parseSVGPath(svgPath) {
   let cmds = svgPath.match(/[a-zA-Z][^a-zA-Z]*/g);
   if (!cmds) return points;
 
-  // path → points 변환
+  // 1. 포인트 추출 (기존과 동일)
   cmds.forEach(cmd => {
     let type = cmd[0];
     let nums = cmd.slice(1).trim().split(/[\s,]+/).map(Number);
-
     if (type === "M" || type === "L") {
-      currentX = nums[0];
-      currentY = nums[1];
+      currentX = nums[0]; currentY = nums[1];
       points.push(createVector(currentX, currentY));
-    } 
-    else if (type === "H") {
+    } else if (type === "H") {
       currentX = nums[0];
       points.push(createVector(currentX, currentY));
-    }
-    else if (type === "V") {
+    } else if (type === "V") {
       currentY = nums[0];
       points.push(createVector(currentX, currentY));
-    }
-    else if (type === "C") {
+    } else if (type === "C") {
       for (let i = 0; i <= 40; i++) {
         let t = i / 40;
         let x = bezierPoint(currentX, nums[0], nums[2], nums[4], t);
         let y = bezierPoint(currentY, nums[1], nums[3], nums[5], t);
         points.push(createVector(x, y));
       }
-      currentX = nums[4];
-      currentY = nums[5];
+      currentX = nums[4]; currentY = nums[5];
     }
   });
 
-  // --- 바운딩박스 계산 ---
   let minX = min(points.map(p => p.x));
   let maxX = max(points.map(p => p.x));
   let minY = min(points.map(p => p.y));
@@ -356,10 +349,9 @@ function parseSVGPath(svgPath) {
   let boxW = maxX - minX;
   let boxH = maxY - minY;
 
-  // 👉 비율 유지 스케일
-  let scale = min(width / boxW, height / boxH) * 0.75;
+  // ⭐ [여백 설정] 0.35 정도로 낮추면 상하좌우 여백이 아주 넉넉해집니다.
+  let scale = min(width / boxW, height / boxH) * 0.6; 
 
-  // 👉 중앙 정렬 (바운딩박스 기준)
   let offsetX = width / 2 - (minX + boxW / 2) * scale;
   let offsetY = height / 2 - (minY + boxH / 2) * scale;
 
@@ -368,41 +360,25 @@ function parseSVGPath(svgPath) {
     p.y = p.y * scale + offsetY;
   }
 
-// -----------------------------------------------
-// ⭐ 2. SVG의 왼쪽 끝점과 오른쪽 끝점을 화면 끝으로 이동시키기
-//    (중간 점들은 비율 유지하여 선형 보간)
-// -----------------------------------------------
-//--------------------------------------------------
-// ⭐ 4) 가운데 점은 그대로 두고
-//    x가 가장 작은 점 → 화면 왼쪽 끝
-//    x가 가장 큰 점   → 화면 오른쪽 끝
-//--------------------------------------------------
+  // ⭐ [양끝 고정] 가로 비율 1.7 화면에서도 선이 안 끊기게 처리
+  let sortedPoints = [...points].sort((a, b) => a.x - b.x);
+  let leftMost = sortedPoints[0];
+  let rightMost = sortedPoints[sortedPoints.length - 1];
 
-let oldMinX2 = min(points.map(p => p.x));
-let oldMaxX2 = max(points.map(p => p.x));
+  // 모든 점을 순회하며 가장 왼쪽/오른쪽 좌표를 화면 끝으로 강제 배달
+  for (let p of points) {
+    if (p === leftMost) p.x = 0;
+    if (p === rightMost) p.x = width;
+  }
 
-let newLeft = 0;
-let newRight = width;
-
-// 두 점만 이동시키기
-for (let p of points) {
-  if (p.x === oldMinX2) p.x = newLeft;
-  if (p.x === oldMaxX2) p.x = newRight;
-}
-
-
-  // -----------------------------------------------
-  // ⭐ 첫 번째 점을 Y축 중앙(centerY)에 정렬하는 보정
-  // -----------------------------------------------
+  // Y축 중앙 정렬 보정
   let firstY = points[0].y;
   let deltaY = centerY - firstY;
-
   for (let p of points) {
     p.y += deltaY;
   }
 
   return points;
-
 }
 
 
