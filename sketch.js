@@ -191,7 +191,7 @@ let wordToSVG = {
 
 // 10.1인치 기본 비율 16:10
 function getCanvasSize() {
-  const targetRatio = 250 / 100;
+  const targetRatio = 170 / 100;
   const currentRatio = windowWidth / windowHeight;
 
   if (currentRatio > targetRatio) {
